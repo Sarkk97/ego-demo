@@ -13,12 +13,13 @@ import (
 var Router *mux.Router
 
 //InitializeRoutes initializes the application routes
-func InitializeRoutes() {
+func initializeRoutes() {
 	Router = mux.NewRouter().StrictSlash(true)
 }
 
 //Run is to run the router setup
 func Run() {
+	initializeRoutes()
 	port := os.Getenv("WEB_SERVER_PORT")
 	fmt.Printf("Web Server started and listening on port %s\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, Router))
