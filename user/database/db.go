@@ -16,7 +16,7 @@ import (
 )
 
 //DB is global database connection
-var DB *gorm.DB
+var dbconn *gorm.DB
 
 //MysqlDB struct for mysql connection params
 type MysqlDB struct {
@@ -50,7 +50,7 @@ func initialize(dialect interface{}) {
 	case MysqlDB:
 		DBURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", db.DbUser, db.DbPass,
 			db.DbHost, db.DbPort, db.DbName)
-		DB, err = gorm.Open("mysql", DBURL)
+		dbconn, err = gorm.Open("mysql", DBURL)
 		if err != nil {
 			fmt.Println("Cannot connect to mysql database")
 			log.Fatal("This is the error:", err)
@@ -60,7 +60,7 @@ func initialize(dialect interface{}) {
 	case PostgresDB:
 		DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", db.DbHost, db.DbPort,
 			db.DbUser, db.DbName, db.DbPass)
-		DB, err = gorm.Open("postgres", DBURL)
+		dbconn, err = gorm.Open("postgres", DBURL)
 		if err != nil {
 			fmt.Println("Cannot connect to postgres database")
 			log.Fatal("This is the error:", err)
@@ -68,21 +68,27 @@ func initialize(dialect interface{}) {
 			fmt.Printf("Connected to the postgres database at %s:%s\n", db.DbHost, db.DbPort)
 		}
 	case SqliteDB:
-		DB, err = gorm.Open("sqlite3", db.DbName)
+		dbconn, err = gorm.Open("sqlite3", db.DbName)
 		if err != nil {
 			fmt.Println("Cannot connect to sqlite3 database")
 			log.Fatal("This is the error:", err)
 		} else {
 			fmt.Printf("Connected to the mysql database at %s\n", db.DbName)
 		}
-		DB.Exec("PRAGMA foreign_keys = ON")
+		dbconn.Exec("PRAGMA foreign_keys = ON")
 	default:
 		log.Fatal("Unrecognized Database type")
 	}
 
 	//perform models migration here
-	models.Migrate(DB)
+	dbconn.LogMode(true)
+	models.Migrate(dbconn)
 
+}
+
+//GetDB returns the database connection
+func GetDB() *gorm.DB {
+	return dbconn
 }
 
 //Run is to run the DB setup

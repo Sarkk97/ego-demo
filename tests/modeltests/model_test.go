@@ -1,7 +1,8 @@
 package modeltests
 
 import (
-	srv "ego/user/server"
+	_db "ego/user/database"
+	"ego/user/models"
 	"fmt"
 	"log"
 	"os"
@@ -11,7 +12,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var server = srv.Server{}
+var db = _db.GetDB()
 
 func TestMain(m *testing.M) {
 	err := godotenv.Load("../../.env")
@@ -19,10 +20,8 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Error getting env %s\n", err)
 	}
 	Database()
-
-	log.Println("Before calling m.Run()!")
+	// db.LogMode(true)
 	retVal := m.Run()
-	log.Println("After calling m.Run()!")
 	os.Exit(retVal)
 }
 
@@ -30,16 +29,62 @@ func Database() {
 	var err error
 	testDbName := os.Getenv("TestDbName")
 	testDbDriver := os.Getenv("TestDbDriver")
-	server.DB, err = gorm.Open(testDbDriver, "../"+testDbName)
+	db, err = gorm.Open(testDbDriver, "../"+testDbName)
 	if err != nil {
 		fmt.Printf("Cannot connect to %s database\n", testDbDriver)
 		log.Fatal("This is the error:", err)
 	} else {
 		fmt.Printf("We are connected to the %s database\n", testDbDriver)
 	}
-	server.DB.Exec("PRAGMA foreign_keys = ON")
+	db.Exec("PRAGMA foreign_keys = ON")
 }
 
-func TestVal(t *testing.T) {
-	fmt.Println("testing worked!")
+func refreshUserTable() error {
+	// db.Exec("SET foreign_key_checks=0;")
+	err := db.DropTableIfExists(&models.User{}).Error
+	if err != nil {
+		return err
+	}
+	// db.Exec("SET foreign_key_checks=1;")
+	err = db.AutoMigrate(&models.User{}).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func seedOneUser() (models.User, error) {
+	user := models.User{
+		Phone: "08023963212",
+		Email: "testemail@gmail.com",
+		PIN:   "1997",
+	}
+	err := db.Create(&user).Error
+	if err != nil {
+		return models.User{}, err
+	}
+	return user, nil
+}
+
+func seedUsers() error {
+	users := []models.User{
+		{
+			Phone: "08023963212",
+			Email: "testemail@gmail.com",
+			PIN:   "1997",
+		},
+		{
+			Phone: "08023863412",
+			Email: "testemail2@gmail.com",
+			PIN:   "1999",
+		},
+	}
+
+	for i := range users {
+		err := db.Create(&users[i]).Error
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
