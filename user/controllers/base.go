@@ -10,11 +10,16 @@ import (
 )
 
 //Router is the global router instance
-var Router *mux.Router
+var router = mux.NewRouter().StrictSlash(true)
 
 //InitializeRoutes initializes the application routes
 func initializeRoutes() {
-	Router = mux.NewRouter().StrictSlash(true)
+
+}
+
+//GetRouter returns the router
+func GetRouter() *mux.Router {
+	return router
 }
 
 //Run is to run the router setup
@@ -22,5 +27,5 @@ func Run() {
 	initializeRoutes()
 	port := os.Getenv("WEB_SERVER_PORT")
 	fmt.Printf("Web Server started and listening on port %s\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, Router))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
