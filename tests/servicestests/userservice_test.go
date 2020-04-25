@@ -1,8 +1,9 @@
-package repotests
+package servicestests
 
 import (
 	"ego/user/models"
 	"ego/user/repositories"
+	"ego/user/services"
 	"fmt"
 	"log"
 	"os"
@@ -14,7 +15,7 @@ import (
 	"gopkg.in/go-playground/assert.v1"
 )
 
-var repo *repositories.GormRepo
+var service *services.UserService
 
 func TestMain(m *testing.M) {
 	//initialize testdb
@@ -31,7 +32,8 @@ func TestMain(m *testing.M) {
 	}
 	db.Exec("PRAGMA foreign_keys = ON")
 
-	repo = repositories.NewGormRepository(db)
+	repo := repositories.NewGormRepository(db)
+	service = services.NewUserService(repo)
 	// repo.DB.LogMode(true)
 
 	retVal := m.Run()
@@ -41,22 +43,22 @@ func TestMain(m *testing.M) {
 
 func refreshUserTable() error {
 	// db.Exec("SET foreign_key_checks=0;")
-	err := repo.DB.DropTableIfExists(&models.User{}).Error
+	err := service.Repo.DB.DropTableIfExists(&models.User{}).Error
 	if err != nil {
 		return err
 	}
 	// db.Exec("SET foreign_key_checks=1;")
-	err = repo.DB.AutoMigrate(&models.User{}).Error
+	err = service.Repo.DB.AutoMigrate(&models.User{}).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func TestRepoCreateUser(t *testing.T) {
+func TestUserCreateService(t *testing.T) {
 	var err error
 	if err = refreshUserTable(); err != nil {
-		t.Errorf("Can't refresh table")
+		t.Errorf("Error refreshing table: %v", err)
 	}
 
 	user := models.User{
@@ -65,26 +67,14 @@ func TestRepoCreateUser(t *testing.T) {
 		PIN:   "1997",
 	}
 
-	if err = repo.CreateUser(&user); err != nil {
-		t.Errorf("Error with repo: %v", err)
-	}
-}
-
-func TestRepoGetUsers(t *testing.T) {
-	var err error
-	if err = refreshUserTable(); err != nil {
-		t.Errorf("Can't refresh table")
-	}
-	_ = repo.CreateUser(&models.User{
-		Phone: "08023963212",
-		Email: "testemail@gmail.com",
-		PIN:   "1997",
-	})
-
-	users, err := repo.GetAllUsers()
+	err = service.CreateUser(&user)
 	if err != nil {
-		t.Errorf("Error with repo: %v", err)
+		t.Errorf("Error with service: %v", err)
 	}
-	assert.Equal(t, len(users), 1)
 
+	assert.Equal(t, user.ID, uint32(1))
+	if err = user.ConfirmPIN("1997"); err != nil {
+		t.Errorf("%v", err)
+		t.Fail()
+	}
 }
