@@ -26,12 +26,10 @@ func (s *UserService) CreateUser(u *models.User) (err error) {
 	}
 
 	u.PIN = string(hashedPIN)
-
 	err = s.Repo.CreateUser(u)
 	if err != nil {
 		return err
 	}
-
 	//Send Email notification after creation
 	// go send_email(u.Email)
 	return nil

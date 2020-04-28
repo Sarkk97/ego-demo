@@ -15,7 +15,7 @@ func Error(w http.ResponseWriter, errmsg interface{}, code int, headers map[stri
 	w.WriteHeader(code)
 
 	err := map[string]interface{}{
-		"status":  "failed",
+		"status":  false,
 		"message": errmsg,
 	}
 
@@ -31,7 +31,7 @@ func Success(w http.ResponseWriter, data interface{}, code int, headers map[stri
 	w.WriteHeader(code)
 
 	success := map[string]interface{}{
-		"status": "success",
+		"status": true,
 		"data":   data,
 	}
 

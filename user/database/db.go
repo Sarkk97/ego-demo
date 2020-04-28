@@ -13,6 +13,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"    //mysql database driver
 	_ "github.com/jinzhu/gorm/dialects/postgres" //postgress database driver
 	_ "github.com/jinzhu/gorm/dialects/sqlite"   //sqlite database driver
+	"github.com/joho/godotenv"
 )
 
 //DB is global database connection
@@ -41,43 +42,39 @@ type SqliteDB struct {
 	DbName string
 }
 
-//Initialize initializes the DB instance
-// func (conn *Conn) Initialize(dialect interface{}) {
-func initialize(dialect interface{}) {
-	var err error
+var dialect = MysqlDB{
+	DbHost: os.Getenv("DB_HOST"),
+	DbName: os.Getenv("DB_NAME"),
+	DbPass: os.Getenv("DB_PASSWORD"),
+	DbPort: os.Getenv("DB_PORT"),
+	DbUser: os.Getenv("DB_USER"),
+}
 
-	switch db := dialect.(type) {
-	case MysqlDB:
-		DBURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", db.DbUser, db.DbPass,
-			db.DbHost, db.DbPort, db.DbName)
-		dbconn, err = gorm.Open("mysql", DBURL)
-		if err != nil {
-			fmt.Println("Cannot connect to mysql database")
-			log.Fatal("This is the error:", err)
-		} else {
-			fmt.Printf("Connected to the mysql database at %s:%s\n", db.DbHost, db.DbPort)
-		}
-	case PostgresDB:
-		DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", db.DbHost, db.DbPort,
-			db.DbUser, db.DbName, db.DbPass)
-		dbconn, err = gorm.Open("postgres", DBURL)
-		if err != nil {
-			fmt.Println("Cannot connect to postgres database")
-			log.Fatal("This is the error:", err)
-		} else {
-			fmt.Printf("Connected to the postgres database at %s:%s\n", db.DbHost, db.DbPort)
-		}
-	case SqliteDB:
-		dbconn, err = gorm.Open("sqlite3", db.DbName)
-		if err != nil {
-			fmt.Println("Cannot connect to sqlite3 database")
-			log.Fatal("This is the error:", err)
-		} else {
-			fmt.Printf("Connected to the mysql database at %s\n", db.DbName)
-		}
-		dbconn.Exec("PRAGMA foreign_keys = ON")
-	default:
-		log.Fatal("Unrecognized Database type")
+//Init initializes the DB instance
+// func (conn *Conn) Initialize(dialect interface{}) {
+func init() {
+	var err error
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error getting env %v", err)
+	} else {
+		fmt.Println("Environment set successfully")
+	}
+
+	DbHost := os.Getenv("DB_HOST")
+	DbName := os.Getenv("DB_NAME")
+	DbPass := os.Getenv("DB_PASSWORD")
+	DbPort := os.Getenv("DB_PORT")
+	DbUser := os.Getenv("DB_USER")
+
+	DBURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", DbUser, DbPass,
+		DbHost, DbPort, DbName)
+	dbconn, err = gorm.Open("mysql", DBURL)
+	if err != nil {
+		fmt.Println("Cannot connect to mysql database")
+		log.Fatal("This is the error:", err)
+	} else {
+		fmt.Printf("Connected to the mysql database at %s:%s\n", DbHost, DbPort)
 	}
 
 	//perform models migration here
@@ -89,23 +86,4 @@ func initialize(dialect interface{}) {
 //GetDB returns the database connection
 func GetDB() *gorm.DB {
 	return dbconn
-}
-
-//Run is to run the DB setup
-func Run() {
-
-	dbparams := MysqlDB{
-		DbHost: os.Getenv("DB_HOST"),
-		DbName: os.Getenv("DB_NAME"),
-		DbPass: os.Getenv("DB_PASSWORD"),
-		DbPort: os.Getenv("DB_PORT"),
-		DbUser: os.Getenv("DB_USER"),
-	}
-
-	//for sqlite
-	// db := SqliteDB{
-	// 	DbName: os.Getenv("DB_NAME")
-	// }
-
-	initialize(dbparams)
 }

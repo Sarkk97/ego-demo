@@ -1,7 +1,9 @@
 package repositories
 
 import (
+	"ego/user/database"
 	"ego/user/models"
+	"fmt"
 
 	"github.com/jinzhu/gorm"
 )
@@ -12,16 +14,20 @@ type GormRepo struct {
 }
 
 //NewGormRepository is a constructor for a gorm repo instance
-func NewGormRepository(db *gorm.DB) *GormRepo {
+func NewGormRepository() *GormRepo {
 	return &GormRepo{
-		DB: db,
+		DB: database.GetDB(),
 	}
 }
 
 //CreateUser creates a new user
-func (r *GormRepo) CreateUser(u *models.User) (err error) {
-	err = r.DB.Create(&u).Error
-	return
+func (r *GormRepo) CreateUser(u *models.User) error {
+	err := r.DB.Debug().Create(u).Error
+	if err != nil {
+		return err
+	}
+	fmt.Printf("repo: %v\n", u)
+	return nil
 }
 
 //GetAllUsers gets all users
