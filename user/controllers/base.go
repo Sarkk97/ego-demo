@@ -15,6 +15,9 @@ var router = mux.NewRouter().StrictSlash(true)
 //InitializeRoutes initializes the application routes
 func initializeRoutes() {
 	router.HandleFunc("/api/v1/user", CreateNewUser).Methods("POST")
+	router.HandleFunc("/api/v1/users", GetAllUsers).Methods("GET")
+	router.HandleFunc("/api/v1/user/{id}", GetUser).Methods("GET")
+	router.HandleFunc("/api/v1/user/{id}", UpdateUser).Methods("PUT")
 }
 
 //GetRouter returns the router

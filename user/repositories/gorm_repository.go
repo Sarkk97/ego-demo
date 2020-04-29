@@ -3,7 +3,6 @@ package repositories
 import (
 	"ego/user/database"
 	"ego/user/models"
-	"fmt"
 
 	"github.com/jinzhu/gorm"
 )
@@ -22,20 +21,40 @@ func NewGormRepository() *GormRepo {
 
 //CreateUser creates a new user
 func (r *GormRepo) CreateUser(u *models.User) error {
-	err := r.DB.Debug().Create(u).Error
+	err := r.DB.Create(u).Error
 	if err != nil {
 		return err
 	}
-	fmt.Printf("repo: %v\n", u)
 	return nil
 }
 
 //GetAllUsers gets all users
-func (r *GormRepo) GetAllUsers() (users []models.User, err error) {
-	err = r.DB.Find(&users).Error
+func (r *GormRepo) GetAllUsers() ([]models.User, error) {
+	users := []models.User{}
+	err := r.DB.Find(&users).Error
 	if err != nil {
-		users = []models.User{}
-		return
+		return users, err
 	}
-	return
+	return users, nil
+}
+
+//GetUser gets a specific user
+func (r *GormRepo) GetUser(id string) (models.User, error) {
+	user := models.User{}
+	err := r.DB.Where("id = ?", id).Find(&user).Error
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+//UpdateUser updates a user
+func (r *GormRepo) UpdateUser(u models.UpdateUser, id string) (models.User, error) {
+	user := models.User{}
+	err := r.DB.Model(&user).Where("id = ?", id).Updates(u).Error
+	if err != nil {
+		return models.User{}, err
+	}
+	updatedUser, _ := r.GetUser(id)
+	return updatedUser, nil
 }
