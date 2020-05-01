@@ -8,18 +8,25 @@ import (
 
 //User is a struct representing the user model
 type User struct {
-	ID        string    `gorm:"primary_key;varchar(120)" json:"id"`
-	Phone     string    `gorm:"not null;unique" json:"phone" validate:"required,numeric"`
-	Email     string    `json:"email" validate:"omitempty,email"`
-	PIN       string    `gorm:"not null" json:"pin" validate:"required,numeric"`
-	CreatedAt time.Time `json:"created_at" `
-	UpdatedAt time.Time `json:"updated_at" `
+	ID        string     `gorm:"primary_key;varchar(120)" json:"id"`
+	Phone     string     `gorm:"not null;unique" json:"phone" validate:"required,numeric"`
+	Email     string     `json:"email" validate:"omitempty,email"`
+	PIN       string     `gorm:"not null" json:"pin" validate:"required,numeric"`
+	CreatedAt time.Time  `json:"created_at" `
+	UpdatedAt time.Time  `json:"updated_at" `
+	LastLogin *time.Time `json:"last_login"`
 }
 
 //UpdateUser is a struct representing the user model when updating
 type UpdateUser struct {
 	Phone string `json:"phone" validate:"omitempty,numeric"`
 	Email string `json:"email" validate:"omitempty,email"`
+}
+
+//LoginUser is a struct representing the user model during login
+type LoginUser struct {
+	Phone string `json:"phone" validate:"required,numeric"`
+	PIN   string `json:"pin" validate:"required,numeric"`
 }
 
 //HashPIN hashes the entered PIN

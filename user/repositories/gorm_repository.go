@@ -3,6 +3,7 @@ package repositories
 import (
 	"ego/user/database"
 	"ego/user/models"
+	"time"
 
 	"github.com/jinzhu/gorm"
 )
@@ -57,4 +58,31 @@ func (r *GormRepo) UpdateUser(u models.UpdateUser, id string) (models.User, erro
 	}
 	updatedUser, _ := r.GetUser(id)
 	return updatedUser, nil
+}
+
+//LoginUser validates a login and returns the user
+func (r *GormRepo) LoginUser(u models.LoginUser) (models.User, error) {
+	var err error
+	//check if user exists
+	user := models.User{}
+	err = r.DB.First(&user, "phone = ?", u.Phone).Error
+	if err != nil {
+		return models.User{}, err
+	}
+	//confirm the pin
+	err = user.ConfirmPIN(u.PIN)
+	if err != nil {
+		return models.User{}, err
+	}
+	return user, nil
+}
+
+//UpdateUserLogin updates the user last_login timestamp after a successful login
+func (r *GormRepo) UpdateUserLogin(u models.User) error {
+	var err error
+	err = r.DB.Model(&u).UpdateColumn("last_login", time.Now()).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }

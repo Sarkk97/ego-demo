@@ -1,6 +1,7 @@
 package services
 
 import (
+	"ego/user/auth"
 	"ego/user/models"
 	"ego/user/repositories"
 
@@ -51,4 +52,21 @@ func (s *UserService) GetUser(id string) (models.User, error) {
 //UpdateUser is a user service method to update a user
 func (s *UserService) UpdateUser(user models.UpdateUser, id string) (models.User, error) {
 	return s.Repo.UpdateUser(user, id)
+}
+
+//LoginUser is a user service method to login a user
+func (s *UserService) LoginUser(user models.LoginUser) (map[string]string, error) {
+	loggedInUser, err := s.Repo.LoginUser(user)
+	tokens := map[string]string{}
+	if err != nil {
+		return tokens, err
+	}
+	//create user tokens
+	tokens, err = auth.CreateTokens(loggedInUser.ID)
+	if err != nil {
+		return tokens, err
+	}
+	//update user last_login
+	_ = s.Repo.UpdateUserLogin(loggedInUser)
+	return tokens, nil
 }
