@@ -1,9 +1,10 @@
-module ego
+module ego/user
 
 go 1.14
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.2.0

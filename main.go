@@ -3,15 +3,17 @@ package main
 import (
 	"ego/user/controllers"
 	_ "ego/user/database"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
 )
 
 func main() {
 
-	//load the environment variable
+	router := controllers.GetRouter()
 
-	//db init and migrations
-	// database.Run()
-
-	//webserver init and routes initialization
-	controllers.Run()
+	port := os.Getenv("WEB_SERVER_PORT")
+	fmt.Printf("Web Server started and listening on port %s\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
