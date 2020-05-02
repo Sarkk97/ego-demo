@@ -98,7 +98,7 @@ func (ws *WalletService) FundWallet(
 			0,
 			amount,
 			amount,
-			models.WALLET_CREDIT,
+			models.WalletCredit,
 			string(meta),
 		)
 
@@ -121,7 +121,7 @@ func (ws *WalletService) FundWallet(
 			wallet.Balance-amount, //  balance before wallet was credited
 			amount,
 			wallet.Balance, // Current wallet balance
-			models.WALLET_CREDIT,
+			models.WalletCredit,
 			string(meta),
 		)
 
@@ -140,7 +140,7 @@ func (ws *WalletService) FundWallet(
 	return wallet, nil
 }
 
-//TransferFunds coordinates funds transfer
+//TransferFunds coordinates funds transfer between wallets
 func (ws *WalletService) TransferFunds(senderID string, receiverID string, amount int) *httperror.HTTPError {
 	senderWallet, err := ws.walletRepo.GetUserWallet(senderID)
 	if err != nil {
@@ -150,11 +150,10 @@ func (ws *WalletService) TransferFunds(senderID string, receiverID string, amoun
 		}
 	}
 
-	receiverWallet, err := ws.walletRepo.GetUserWallet(receiverID)
-	if err != nil {
+	if senderWallet == nil { //Wallet does not exist(empty wallet)
 		return &httperror.HTTPError{
-			Message: err.Error(),
-			Code:    http.StatusInternalServerError,
+			Message: "Insufficient wallet balance",
+			Code:    http.StatusBadRequest,
 		}
 	}
 
@@ -166,14 +165,22 @@ func (ws *WalletService) TransferFunds(senderID string, receiverID string, amoun
 		}
 	}
 
-	if !enoughFunds || senderWallet == nil { //Insufficient funds
+	if !enoughFunds { //Insufficient funds
 		return &httperror.HTTPError{
-			Message: err.Error(),
+			Message: "Insufficient wallet balance",
 			Code:    http.StatusBadRequest,
 		}
 	}
 
-	/** Process transfer **/
+	receiverWallet, err := ws.walletRepo.GetUserWallet(receiverID)
+	if err != nil {
+		return &httperror.HTTPError{
+			Message: err.Error(),
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	//Debit sender wallet
 	preTransferBalance := senderWallet.Balance
 	senderWallet, _ = senderWallet.Debit(amount)
 	senderWalletTransaction := ws.factory.MakeWalletTransaction(
@@ -182,29 +189,33 @@ func (ws *WalletService) TransferFunds(senderID string, receiverID string, amoun
 		preTransferBalance,
 		amount,
 		senderWallet.Balance,
-		models.WALLET_DEBIT,
+		models.WalletDebit,
 		"",
 	)
 
+	//Credit receiver wallet
 	isNewReceiverWallet := false
-
-	if receiverWallet == nil {
+	var preReceiptBalance int
+	if receiverWallet == nil { //No wallet(empty wallet)
 		isNewReceiverWallet = true
+		preReceiptBalance = 0
 		receiverWallet = ws.factory.MakeWallet(receiverID, amount)
+	} else {
+		preReceiptBalance = receiverWallet.Balance
+		receiverWallet, _ = receiverWallet.Credit(amount)
 	}
-	preReceiptBalance := receiverWallet.Balance
 
-	receiverWallet, _ = receiverWallet.Credit(amount)
 	receiverWalletTransaction := ws.factory.MakeWalletTransaction(
 		receiverWallet.ID,
 		"",
 		preReceiptBalance,
 		amount,
 		receiverWallet.Balance,
-		models.WALLET_CREDIT,
+		models.WalletCredit,
 		"",
 	)
 
+	//Persist debit and credit
 	ws.uow.RegisterDirty(senderWallet)
 	ws.uow.RegisterNew(senderWalletTransaction)
 	if isNewReceiverWallet {

@@ -6,7 +6,11 @@ import (
 	"ego-api/wallet/services"
 	"encoding/json"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
+
+const specError = "Request parameters do not match spec"
 
 //Index is the handler for the base route
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -18,11 +22,20 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 //FundWallet credits a wallet
 func FundWallet(w http.ResponseWriter, r *http.Request) {
-	requestData := &data.FundWalletData{}
-	json.NewDecoder(r.Body).Decode(requestData)
-
 	headers := map[string]string{
 		"Content-Type": "application/json",
+	}
+	requestData := &data.FundWalletData{}
+
+	err := json.NewDecoder(r.Body).Decode(requestData)
+	if err != nil {
+		respond.WithError(
+			w,
+			specError,
+			400,
+			headers,
+		)
+		return
 	}
 
 	if errBag := requestData.Validate(); len(errBag) != 0 { // Validation error occurred
@@ -61,16 +74,43 @@ func FundWallet(w http.ResponseWriter, r *http.Request) {
 
 //TransferFunds handles funds transfer
 func TransferFunds(w http.ResponseWriter, r *http.Request) {
-	/*vars := mux.Vars(r)
+	vars := mux.Vars(r)
 	senderID := vars["senderID"]
 	receiverID := vars["receiverID"]
-
 	requestBody := &struct {
-		amount int `json:"amount"`
+		Amount int `json:"amount"`
+	}{}
+	headers := map[string]string{
+		"Content-Type": "application/json",
 	}
 
-	json.NewDecoder(r.Body).Decode(requestBody)*/
+	err := json.NewDecoder(r.Body).Decode(requestBody)
+	if err != nil { //Invalid request body
+		respond.WithError(
+			w,
+			specError,
+			400,
+			headers,
+		)
+	}
 
-	//TODO validate amount
+	walletService := services.NewWalletService()
+	httperr := walletService.TransferFunds(senderID, receiverID, requestBody.Amount)
+	if httperr != nil {
+		respond.WithError(
+			w,
+			httperr.Message,
+			httperr.Code,
+			headers,
+		)
 
+		return
+	}
+
+	respond.WithSuccess(
+		w,
+		"success",
+		http.StatusOK,
+		headers,
+	)
 }

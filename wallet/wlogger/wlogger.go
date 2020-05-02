@@ -27,7 +27,7 @@ type FileLogger struct {
 
 //Log prints a log message
 func (fileLogger FileLogger) log(message string, severity string) {
-	f, err := os.OpenFile("wallet.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := os.OpenFile("logs/wallet.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Panicln(err)
 	}

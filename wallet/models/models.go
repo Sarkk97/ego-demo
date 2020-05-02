@@ -6,8 +6,10 @@ import (
 )
 
 const (
-	WALLET_CREDIT string = "credit"
-	WALLET_DEBIT  string = "debit"
+	//WalletCredit is credit
+	WalletCredit string = "credit"
+	//WalletDebit is debit
+	WalletDebit string = "debit"
 )
 
 //Wallet models a model
@@ -39,8 +41,9 @@ func (WalletTransaction) TableName() string {
 
 //Credit credits a Wallet
 func (wallet *Wallet) Credit(amount int) (*Wallet, error) {
-	if amount < 0 {
-		return nil, fmt.Errorf("Invalid amount to credit wallet: %d", amount)
+
+	if err := wallet.validateAmount(amount); err != nil {
+		return nil, err
 	}
 
 	wallet.Balance += amount
@@ -50,8 +53,9 @@ func (wallet *Wallet) Credit(amount int) (*Wallet, error) {
 
 //Debit debits a Wallet
 func (wallet *Wallet) Debit(amount int) (*Wallet, error) {
-	if amount < 0 {
-		return nil, fmt.Errorf("Invalid amount to debit from wallet: %d", amount)
+
+	if err := wallet.validateAmount(amount); err != nil {
+		return nil, err
 	}
 
 	if amount > wallet.Balance {
@@ -66,9 +70,18 @@ func (wallet *Wallet) Debit(amount int) (*Wallet, error) {
 //HasFundsForTransaction checks if sufficeint funds exist in a wallet
 //to carry out a transaction
 func (wallet *Wallet) HasFundsForTransaction(amount int) (bool, error) {
-	if amount < 0 {
-		return false, fmt.Errorf("Invalid amount: %d", amount)
+
+	if err := wallet.validateAmount(amount); err != nil {
+		return false, err
 	}
 
 	return wallet.Balance >= amount, nil
+}
+
+func (wallet *Wallet) validateAmount(amount int) error {
+	if amount < 0 {
+		return fmt.Errorf("Invalid amount: %d", amount)
+	}
+
+	return nil
 }
