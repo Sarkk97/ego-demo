@@ -50,14 +50,12 @@ func (r *GormRepo) GetUser(id string) (models.User, error) {
 }
 
 //UpdateUser updates a user
-func (r *GormRepo) UpdateUser(u models.UpdateUser, id string) (models.User, error) {
-	user := models.User{}
-	err := r.DB.Model(&user).Where("id = ?", id).Updates(u).Error
+func (r *GormRepo) UpdateUser(u *models.User) error {
+	err := r.DB.Save(u).Error
 	if err != nil {
-		return models.User{}, err
+		return err
 	}
-	updatedUser, _ := r.GetUser(id)
-	return updatedUser, nil
+	return nil
 }
 
 //LoginUser validates a login and returns the user

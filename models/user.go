@@ -23,12 +23,6 @@ type UpdateUser struct {
 	Email string `json:"email" validate:"omitempty,email"`
 }
 
-//LoginUser is a struct representing the user model during login
-type LoginUser struct {
-	Phone string `json:"phone" validate:"required,numeric"`
-	PIN   string `json:"pin" validate:"required,numeric"`
-}
-
 //HashPIN hashes the entered PIN
 func (u *User) HashPIN(pin string) ([]byte, error) {
 	return bcrypt.GenerateFromPassword([]byte(pin), bcrypt.DefaultCost)

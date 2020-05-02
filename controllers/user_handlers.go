@@ -118,21 +118,21 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//marshal request body into json
-	user := models.UpdateUser{}
-	err = json.Unmarshal(body, &user)
+	userProps := models.UpdateUser{}
+	err = json.Unmarshal(body, &userProps)
 	if err != nil {
 		response.Error(w, err.Error(), 400, headers)
 		return
 	}
 
 	//validate request body
-	errs := valid.ValidateUpdateUser(user)
+	errs := valid.ValidateUpdateUser(userProps)
 	if len(errs) != 0 {
 		response.Error(w, errs, 400, headers)
 		return
 	}
 
-	updatedUser, err := service.UpdateUser(user, id)
+	updatedUser, err := service.UpdateUser(userProps, id)
 	if err != nil {
 		response.Error(w, err.Error(), 400, headers)
 		return

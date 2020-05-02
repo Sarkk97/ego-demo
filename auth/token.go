@@ -1,7 +1,10 @@
 package auth
 
 import (
+	"errors"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -43,4 +46,70 @@ func CreateTokens(userID string) (map[string]string, error) {
 	tokens["access"] = accessToken
 	tokens["refresh"] = refreshToken
 	return tokens, nil
+}
+
+//ExtractToken extracts the jwt token string from the request header
+func ExtractToken(r *http.Request) (string, error) {
+	bearerToken := r.Header.Get("Authorization")
+	if bearerToken == "" {
+		return "", errors.New("Missing authentication token")
+	}
+	tokenSlice := strings.Split(bearerToken, " ")
+	if len(tokenSlice) != 2 {
+		return "", errors.New("Token does not use the bearer scheme")
+	}
+	if strings.ToLower(tokenSlice[0]) != "bearer" {
+		return "", errors.New("Token does not use the bearer scheme")
+	}
+	return tokenSlice[1], nil
+}
+
+//ValidateToken validates the jwt authorization token
+func ValidateToken(r *http.Request) error {
+	tokenString, err := ExtractToken(r)
+	if err != nil {
+		return err
+	}
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("Unexpected signing method")
+		}
+		return []byte(os.Getenv("API_SECRET")), nil
+	})
+	if err != nil {
+		return err
+	}
+	if _, ok := token.Claims.(jwt.MapClaims); !ok {
+		return errors.New("invalid token claims")
+	}
+	tokenType := token.Claims.(jwt.MapClaims)["token_type"]
+	if tokenType != "access" {
+		return errors.New("Token must be an access token")
+	}
+	return nil
+}
+
+//GetIDFromRefreshToken validates the jwt refresh token and extracts the user id
+func GetIDFromRefreshToken(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("Unexpected signing method")
+		}
+		return []byte(os.Getenv("API_SECRET")), nil
+	})
+	if err != nil {
+		return "", err
+	}
+	if _, ok := token.Claims.(jwt.MapClaims); !ok {
+		return "", errors.New("invalid token claims")
+	}
+	tokenType := token.Claims.(jwt.MapClaims)["token_type"]
+	if tokenType != "refresh" {
+		return "", errors.New("Token must be a refresh token")
+	}
+	userID := token.Claims.(jwt.MapClaims)["user_id"]
+	if _, ok := userID.(string); !ok {
+		return "", errors.New("The user id in the token is not a uuid string")
+	}
+	return userID.(string), nil
 }

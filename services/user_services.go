@@ -1,7 +1,6 @@
 package services
 
 import (
-	"ego/user/auth"
 	"ego/user/models"
 	"ego/user/repositories"
 
@@ -10,11 +9,12 @@ import (
 
 //UserService is a struct for user services
 type UserService struct {
-	Repo *repositories.GormRepo
+	// Repo *repositories.GormRepo
+	Repo repositories.UserRepository
 }
 
 //NewUserService is constructor for UserService
-func NewUserService(r *repositories.GormRepo) *UserService {
+func NewUserService(r repositories.UserRepository) *UserService {
 	return &UserService{
 		Repo: r,
 	}
@@ -50,23 +50,22 @@ func (s *UserService) GetUser(id string) (models.User, error) {
 }
 
 //UpdateUser is a user service method to update a user
-func (s *UserService) UpdateUser(user models.UpdateUser, id string) (models.User, error) {
-	return s.Repo.UpdateUser(user, id)
-}
+func (s *UserService) UpdateUser(props models.UpdateUser, id string) (models.User, error) {
+	user, err := s.Repo.GetUser(id)
+	if err != nil {
+		return models.User{}, err
+	}
+	// Update User with props
+	if props.Email != "" {
+		user.Email = props.Email
+	}
+	if props.Phone != "" {
+		user.Phone = props.Phone
+	}
 
-//LoginUser is a user service method to login a user
-func (s *UserService) LoginUser(user models.LoginUser) (map[string]string, error) {
-	loggedInUser, err := s.Repo.LoginUser(user)
-	tokens := map[string]string{}
+	err = s.Repo.UpdateUser(&user)
 	if err != nil {
-		return tokens, err
+		return models.User{}, err
 	}
-	//create user tokens
-	tokens, err = auth.CreateTokens(loggedInUser.ID)
-	if err != nil {
-		return tokens, err
-	}
-	//update user last_login
-	_ = s.Repo.UpdateUserLogin(loggedInUser)
-	return tokens, nil
+	return user, nil
 }

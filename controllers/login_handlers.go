@@ -37,7 +37,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//get UserService
-	service := services.NewUserService(repositories.NewGormRepository())
+	service := services.NewLoginService(repositories.NewGormRepository())
 
 	//service to login user
 	tokens, err := service.LoginUser(user)
@@ -46,4 +46,39 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.Success(w, tokens, 200, headers)
+}
+
+//RefreshToken handler refreshes the access token
+func RefreshToken(w http.ResponseWriter, r *http.Request) {
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
+	//read request body
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		response.Error(w, err.Error(), 400, headers)
+		return
+	}
+
+	//marshal request body into json
+	refreshToken := models.RefreshToken{}
+	err = json.Unmarshal(body, &refreshToken)
+	if err != nil {
+		response.Error(w, err.Error(), 400, headers)
+		return
+	}
+	//validate request body
+	errs := valid.ValidateRefreshTokenRequest(refreshToken)
+	if len(errs) != 0 {
+		response.Error(w, errs, 400, headers)
+		return
+	}
+
+	service := services.NewLoginService(repositories.NewGormRepository())
+	accessToken, err := service.RefreshToken(refreshToken)
+	if err != nil {
+		response.Error(w, err.Error(), 400, headers)
+		return
+	}
+	response.Success(w, accessToken, 200, headers)
 }
