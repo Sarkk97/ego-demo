@@ -20,6 +20,13 @@ func NewGormRepository() *GormRepo {
 	}
 }
 
+//NewGormRepositoryWithDB is a constructor for a gorm repo instance with a db passed into it. Useful for testing
+func NewGormRepositoryWithDB(db *gorm.DB) *GormRepo {
+	return &GormRepo{
+		DB: db,
+	}
+}
+
 //CreateUser creates a new user
 func (r *GormRepo) CreateUser(u *models.User) error {
 	err := r.DB.Create(u).Error
