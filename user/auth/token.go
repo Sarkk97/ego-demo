@@ -55,10 +55,7 @@ func ExtractToken(r *http.Request) (string, error) {
 		return "", errors.New("Missing authentication token")
 	}
 	tokenSlice := strings.Split(bearerToken, " ")
-	if len(tokenSlice) != 2 {
-		return "", errors.New("Token does not use the bearer scheme")
-	}
-	if strings.ToLower(tokenSlice[0]) != "bearer" {
+	if len(tokenSlice) != 2 || strings.ToLower(tokenSlice[0]) != "bearer" {
 		return "", errors.New("Token does not use the bearer scheme")
 	}
 	return tokenSlice[1], nil
@@ -106,6 +103,31 @@ func GetIDFromRefreshToken(tokenString string) (string, error) {
 	tokenType := token.Claims.(jwt.MapClaims)["token_type"]
 	if tokenType != "refresh" {
 		return "", errors.New("Token must be a refresh token")
+	}
+	userID := token.Claims.(jwt.MapClaims)["user_id"]
+	if _, ok := userID.(string); !ok {
+		return "", errors.New("The user id in the token is not a uuid string")
+	}
+	return userID.(string), nil
+}
+
+//GetIDFromAccessToken validates the jwt access token and extracts the user id
+func GetIDFromAccessToken(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("Unexpected signing method")
+		}
+		return []byte(os.Getenv("API_SECRET")), nil
+	})
+	if err != nil {
+		return "", err
+	}
+	if _, ok := token.Claims.(jwt.MapClaims); !ok {
+		return "", errors.New("invalid token claims")
+	}
+	tokenType := token.Claims.(jwt.MapClaims)["token_type"]
+	if tokenType != "access" {
+		return "", errors.New("Token must be an access token")
 	}
 	userID := token.Claims.(jwt.MapClaims)["user_id"]
 	if _, ok := userID.(string); !ok {
