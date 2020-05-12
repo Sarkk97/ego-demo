@@ -101,6 +101,30 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	response.Success(w, user, 200, headers)
 }
 
+//GetUserProfile handler gets user profile
+func GetUserProfile(w http.ResponseWriter, r *http.Request) {
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	//get UserService
+	service := services.NewUserService(repositories.NewGormRepository())
+	//service to get user
+	profile, err := service.GetUserProfile(id)
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			response.Error(w, err.Error(), 404, headers)
+		} else {
+			response.Error(w, err.Error(), 400, headers)
+		}
+		return
+	}
+	response.Success(w, profile, 200, headers)
+}
+
 //UpdateUser updates a user
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	headers := map[string]string{
@@ -138,5 +162,31 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.Success(w, updatedUser, 200, headers)
+
+}
+
+//UserActivation toggles user activation status
+func UserActivation(w http.ResponseWriter, r *http.Request) {
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
+	service := services.NewUserService(repositories.NewGormRepository())
+	vars := mux.Vars(r)
+	id := vars["id"]
+	action := vars["action"]
+	user := models.User{}
+	var err error
+
+	if action == "activate" {
+		user, err = service.UserActivation(id, true)
+	} else {
+		user, err = service.UserActivation(id, false)
+	}
+
+	if err != nil {
+		response.Error(w, err.Error(), 400, headers)
+		return
+	}
+	response.Success(w, user, 200, headers)
 
 }

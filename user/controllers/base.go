@@ -19,7 +19,9 @@ func initializeRoutes() {
 	router.Handle("/user", AuthHandlers.ThenFunc(CreateNewUser)).Methods("POST")
 	router.Handle("/users", AuthHandlers.ThenFunc(GetAllUsers)).Methods("GET")
 	router.Handle("/user/{id}", AuthHandlers.ThenFunc(GetUser)).Methods("GET")
+	router.Handle("/user/{id}/profile", AuthHandlers.ThenFunc(GetUserProfile)).Methods("GET")
 	router.Handle("/user/{id}", AuthHandlers.ThenFunc(UpdateUser)).Methods("PUT")
+	router.Handle("/user/{id}/status", AuthHandlers.ThenFunc(UserActivation)).Queries("action", "{action:activate|deactivate}").Methods("GET")
 	router.Handle("/auth/login", NonAuthHandlers.ThenFunc(LoginUser)).Methods("POST")
 	router.Handle("/auth/refresh", NonAuthHandlers.ThenFunc(RefreshToken)).Methods("POST")
 }

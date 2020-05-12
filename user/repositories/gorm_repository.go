@@ -36,6 +36,15 @@ func (r *GormRepo) CreateUser(u *models.User) error {
 	return nil
 }
 
+//CreateProfile creates a new profile
+func (r *GormRepo) CreateProfile(p *models.Profile) error {
+	err := r.DB.Create(p).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 //GetAllUsers gets all users
 func (r *GormRepo) GetAllUsers() ([]models.User, error) {
 	users := []models.User{}
@@ -54,6 +63,18 @@ func (r *GormRepo) GetUser(id string) (models.User, error) {
 		return user, err
 	}
 	return user, nil
+}
+
+// GetUserProfile return
+func (r *GormRepo) GetUserProfile(u models.User) (models.Profile, error) {
+	profile := models.Profile{}
+	err := r.DB.Model(&u).Related(&profile).Error
+	if err != nil {
+		return profile, err
+	}
+	profile.User = u
+	return profile, nil
+
 }
 
 //UpdateUser updates a user
@@ -86,6 +107,16 @@ func (r *GormRepo) LoginUser(u models.LoginUser) (models.User, error) {
 func (r *GormRepo) UpdateUserLogin(u models.User) error {
 	var err error
 	err = r.DB.Model(&u).UpdateColumn("last_login", time.Now()).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//UpdateUserStatus updates the user activation status
+func (r *GormRepo) UpdateUserStatus(u *models.User, status bool) error {
+	var err error
+	err = r.DB.Model(&u).Update("active", status).Error
 	if err != nil {
 		return err
 	}
