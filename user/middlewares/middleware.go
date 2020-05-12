@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"ego/user/auth"
 	"ego/user/response"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 
 	"github.com/gorilla/handlers"
 )
+
+type ContextKey string
 
 //AuthenticationMiddleware sets the jwt authentication
 func AuthenticationMiddleware(next http.Handler) http.Handler {
@@ -17,7 +20,19 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 			response.Error(w, err.Error(), 401, map[string]string{"Content-Type": "application/json"})
 			return
 		}
-		next.ServeHTTP(w, r)
+		//extract userid from token and add to request context
+		tokenString, err := auth.ExtractToken(r)
+		if err != nil {
+			response.Error(w, err.Error(), 401, map[string]string{"Content-Type": "application/json"})
+			return
+		}
+		userID, err := auth.GetIDFromAccessToken(tokenString)
+		if err != nil {
+			response.Error(w, err.Error(), 401, map[string]string{"Content-Type": "application/json"})
+			return
+		}
+		ctx := context.WithValue(r.Context(), ContextKey("UserID"), userID)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
