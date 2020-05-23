@@ -190,3 +190,8 @@ func UserActivation(w http.ResponseWriter, r *http.Request) {
 	response.Success(w, user, 200, headers)
 
 }
+
+//UpdateUserProfile updates a user profile
+func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
+
+}

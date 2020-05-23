@@ -78,8 +78,17 @@ func (r *GormRepo) GetUserProfile(u models.User) (models.Profile, error) {
 }
 
 //UpdateUser updates a user
-func (r *GormRepo) UpdateUser(u *models.User) error {
-	err := r.DB.Save(u).Error
+func (r *GormRepo) UpdateUser(u *models.User, fields map[string]interface{}) error {
+	err := r.DB.Model(u).Updates(fields).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//UpdateUserProfile updates the user profile
+func (r *GormRepo) UpdateUserProfile(p *models.Profile, fields map[string]interface{}) error {
+	err := r.DB.Model(p).Updates(fields).Error
 	if err != nil {
 		return err
 	}

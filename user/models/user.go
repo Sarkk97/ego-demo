@@ -22,6 +22,9 @@ type User struct {
 type UpdateUser struct {
 	Phone string `json:"phone" validate:"omitempty,numeric"`
 	Email string `json:"email" validate:"omitempty,email"`
+	BVN   string `json:"bvn"`
+	ProfileBio
+	ProfileWork
 }
 
 //HashPIN hashes the entered PIN

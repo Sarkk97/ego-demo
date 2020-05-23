@@ -16,7 +16,7 @@ func CreateAccessToken(userID string) (string, error) {
 	claims["token_type"] = "access"
 	claims["authorized"] = true
 	claims["user_id"] = userID
-	claims["exp"] = time.Now().Add(time.Hour * 1).Unix() //Token expires after 1 hour
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix() //Token expires after 1 hour
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(os.Getenv("API_SECRET")))
 }
@@ -27,7 +27,7 @@ func CreateRefreshToken(userID string) (string, error) {
 	claims["token_type"] = "refresh"
 	claims["authorized"] = true
 	claims["user_id"] = userID
-	claims["exp"] = time.Now().Add(time.Hour * 24).Unix() //Token expires after 24 hours
+	claims["exp"] = time.Now().Add(time.Hour * 48).Unix() //Token expires after 24 hours
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(os.Getenv("API_SECRET")))
 }

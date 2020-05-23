@@ -3,6 +3,7 @@ package services
 import (
 	"ego/user/models"
 	"ego/user/repositories"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -74,24 +75,83 @@ func (s *UserService) GetUserProfile(id string) (models.Profile, error) {
 }
 
 //UpdateUser is a user service method to update a user
-func (s *UserService) UpdateUser(props models.UpdateUser, id string) (models.User, error) {
+func (s *UserService) UpdateUser(props models.UpdateUser, id string) (models.Profile, error) {
+	//update user fields
+
+	fmt.Printf("%+v\n", props)
 	user, err := s.Repo.GetUser(id)
 	if err != nil {
-		return models.User{}, err
+		return models.Profile{}, err
 	}
+	userUpdateFields := map[string]interface{}{}
 	// Update User with props
 	if props.Email != "" {
-		user.Email = props.Email
+		userUpdateFields["email"] = props.Email
 	}
 	if props.Phone != "" {
-		user.Phone = props.Phone
+		userUpdateFields["phone"] = props.Phone
 	}
 
-	err = s.Repo.UpdateUser(&user)
-	if err != nil {
-		return models.User{}, err
+	if len(userUpdateFields) != 0 {
+		err := s.Repo.UpdateUser(&user, userUpdateFields)
+		if err != nil {
+			return models.Profile{}, err
+		}
 	}
-	return user, nil
+
+	//update profile fields
+	profile, err := s.Repo.GetUserProfile(user)
+	if err != nil {
+		return models.Profile{}, err
+	}
+	profileUpdateFields := map[string]interface{}{}
+	// Update Profile with props
+	if props.BVN != "" {
+		profileUpdateFields["bvn"] = props.BVN
+		//connect to BVN validation service
+	}
+	if props.FirstName != "" {
+		profileUpdateFields["first_name"] = props.FirstName
+	}
+	if props.LastName != "" {
+		profileUpdateFields["last_name"] = props.LastName
+	}
+	if props.DateOfBirth != "" {
+		profileUpdateFields["date_of_birth"] = props.DateOfBirth
+	}
+	/*
+		Handle logic for saving avatar
+		if props.FirstName != "" {
+			profile.FirstName = props.FirstName
+		}
+	*/
+	if props.HomeAddress != "" {
+		profileUpdateFields["home_address"] = props.HomeAddress
+	}
+	if props.EmploymentStatus != "" {
+		profileUpdateFields["employment_status"] = props.EmploymentStatus
+	}
+	if props.EmployerName != "" {
+		profileUpdateFields["employer_name"] = props.EmployerName
+	}
+	if props.EmployerAddress != "" {
+		profileUpdateFields["employer_address"] = props.EmployerAddress
+	}
+	if props.Designation != "" {
+		profileUpdateFields["designation"] = props.Designation
+	}
+	if props.DateOfEmployment != "" {
+		profileUpdateFields["date_of_employment"] = props.DateOfEmployment
+	}
+
+	if len(profileUpdateFields) != 0 {
+		err := s.Repo.UpdateUserProfile(&profile, profileUpdateFields)
+		if err != nil {
+			return models.Profile{}, err
+		}
+	}
+
+	return profile, nil
 }
 
 //UserActivation is a user service method to activate/deactivate a user

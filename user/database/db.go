@@ -78,7 +78,7 @@ func init() {
 	}
 
 	//perform models migration here
-	// dbconn.LogMode(true)
+	dbconn.LogMode(true)
 	models.Migrate(dbconn)
 
 }
