@@ -1,0 +1,142 @@
+package services
+
+import (
+	"ego-api/wallet/wlogger"
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/streadway/amqp"
+)
+
+var (
+	//RabbitHost is RabbitMQ Host
+	RabbitHost string
+	//RabbitPort is RabbitMQ Port
+	RabbitPort string
+	//RabbitUsername is RabbitMQ Host
+	RabbitUsername string
+	//RabbitPassword is RabbitMQ Password
+	RabbitPassword string
+
+	exist bool
+)
+
+//Publisher dispacthes messages to the message broker (RabbitMQ)
+type Publisher struct {
+	logger wlogger.Logger
+}
+
+func failOnError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
+}
+
+func (publisher *Publisher) setUp() {
+	if RabbitHost, exist = os.LookupEnv("RABBIT_HOST"); !exist {
+		publisher.logger.Error("RABBIT_HOST env variable not set")
+	}
+
+	if RabbitPort, exist = os.LookupEnv("RABBIT_PORT"); !exist {
+		publisher.logger.Error("RABBIT_PORT env variable not set")
+	}
+
+	if RabbitUsername, exist = os.LookupEnv("RABBIT_USERNAME"); !exist {
+		publisher.logger.Error("RABBIT_USERNAME env variable not set")
+	}
+
+	if RabbitPassword, exist = os.LookupEnv("RABBIT_PASSWORD"); !exist {
+		publisher.logger.Error("RABBIT_PASSWORD env variable not set")
+	}
+}
+
+//Publish sends a message to the message broker
+func (publisher *Publisher) Publish(message []byte) {
+
+	publisher.setUp()
+
+	conn, err := amqp.Dial(fmt.Sprintf(
+		"amqp://%s:%s@%s:%s/",
+		RabbitUsername,
+		RabbitPassword,
+		RabbitHost,
+		RabbitPort,
+	))
+	if err != nil {
+		publisher.logger.Error(fmt.Sprintf("%s: %s", "Failed to connect to rabbit", err))
+		return
+	}
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	if err != nil {
+		publisher.logger.Error(fmt.Sprintf("%s: %s", "Failed to open a channel", err))
+		return
+	}
+	defer ch.Close()
+
+	err = ch.ExchangeDeclare(
+		"notifications", // name
+		"topic",         // type
+		true,            // durable
+		false,           // auto-deleted
+		false,           // internal
+		false,           // no-wait
+		nil,             // arguments
+	)
+	if err != nil {
+		publisher.logger.Error(fmt.Sprintf("%s: %s", "Failed to declare an exchange", err))
+		return
+	}
+
+	err = ch.Publish(
+		"notifications",       // exchange
+		"email_notifications", // routing key
+		false,                 // mandatory
+		false,                 // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        message,
+		})
+
+	if err != nil {
+		publisher.logger.Error(fmt.Sprintf("%s: %s", "Failed to publish a message", err))
+		return
+	}
+
+	log.Printf(" [x] Sent %s", message)
+}
+
+//NewPublisher returns an instance of a publisher
+func NewPublisher() *Publisher {
+	return &Publisher{
+		logger: wlogger.NewLogger(),
+	}
+}
+
+//Test tests publisher
+func Test() {
+	publisher := NewPublisher()
+
+	data := struct {
+		From    string   `json:"from"`
+		To      []string `json:"to"`
+		Bcc     []string `json:"bcc"`
+		Cc      []string `json:"cc"`
+		Subject string   `json:"subject"`
+		Body    []byte   `json:"body"`
+	}{
+		From:    "devs.ego@gmail.com",
+		To:      []string{"jenlesamuel@gmail.com"},
+		Bcc:     []string{},
+		Cc:      []string{},
+		Subject: "Testing notification microservice",
+		Body:    []byte("Payment confirmed"),
+	}
+
+	jsonData, _ := json.Marshal(data)
+
+	publisher.Publish(jsonData)
+}
