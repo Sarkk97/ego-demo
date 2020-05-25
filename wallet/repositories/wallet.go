@@ -1,10 +1,10 @@
 package repositories
 
 import (
-	"ego-api/wallet/httperror"
 	"ego-api/wallet/models"
 	"ego-api/wallet/wlogger"
 	"errors"
+	"net/http"
 
 	"github.com/jinzhu/gorm"
 )
@@ -26,7 +26,7 @@ type WalletDBRepository struct {
 func NewWalletRepository() WalletRepository {
 
 	return &WalletDBRepository{
-		db:     db, //defined in init.go
+		db:     db, //defined in init.go within same package
 		logger: wlogger.NewLogger(),
 	}
 }
@@ -45,7 +45,7 @@ func (dbRepo *WalletDBRepository) GetUserWallet(userID string) (*models.Wallet, 
 
 		//DB related error occurred
 		dbRepo.logger.Error(err.Error())
-		return nil, errors.New(httperror.ServerError)
+		return nil, errors.New(http.StatusText(http.StatusInternalServerError))
 	}
 
 	return wallet, nil
@@ -57,7 +57,7 @@ func (dbRepo *WalletDBRepository) Add(wallet *models.Wallet) error {
 	if err := dbRepo.db.Create(wallet).Error; err != nil {
 		dbRepo.logger.Error(err.Error())
 
-		return errors.New(httperror.ServerError)
+		return errors.New(http.StatusText(http.StatusInternalServerError))
 	}
 
 	return nil
@@ -69,7 +69,7 @@ func (dbRepo *WalletDBRepository) Update(wallet *models.Wallet) error {
 	if err := dbRepo.db.Model(&models.Wallet{}).Updates(wallet).Error; err != nil {
 		dbRepo.logger.Error(err.Error())
 
-		return errors.New(httperror.ServerError)
+		return errors.New(http.StatusText(http.StatusInternalServerError))
 	}
 
 	return nil

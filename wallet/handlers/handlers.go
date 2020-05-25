@@ -89,7 +89,7 @@ func TransferFunds(w http.ResponseWriter, r *http.Request) {
 		respond.WithError(
 			w,
 			specError,
-			400,
+			http.StatusUnprocessableEntity,
 			headers,
 		)
 	}
@@ -109,7 +109,7 @@ func TransferFunds(w http.ResponseWriter, r *http.Request) {
 
 	respond.WithSuccess(
 		w,
-		"success",
+		http.StatusText(http.StatusOK),
 		http.StatusOK,
 		headers,
 	)

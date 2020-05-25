@@ -199,7 +199,7 @@ func (ws *WalletService) TransferFunds(senderID string, receiverID string, amoun
 	if receiverWallet == nil { //No wallet(empty wallet)
 		isNewReceiverWallet = true
 		preReceiptBalance = 0
-		receiverWallet = ws.factory.MakeWallet(receiverID, amount)
+		receiverWallet = ws.factory.MakeWallet(receiverID, amount) 
 	} else {
 		preReceiptBalance = receiverWallet.Balance
 		receiverWallet, _ = receiverWallet.Credit(amount)

@@ -14,11 +14,15 @@ services:
       - DB_USER=wallet
       - DB_PASSWORD=wallet
       - DB_NAME=wallet
-      - PAYSTACK_SECRET="sk_test_e8f6f20d2a1f6f4d299987d8bcaf1102b8c82253"
+      - PAYSTACK_SECRET=sk_test_e8f6f20d2a1f6f4d299987d8bcaf1102b8c82253
     ports:
       - "8001:8080"
     depends_on:
       - db
+    networks:
+      default:
+        aliases:
+          - wallet_app
 
   db:
     image: mysql:8.0
