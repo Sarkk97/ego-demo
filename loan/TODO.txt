@@ -1,5 +1,0 @@
-Restrict actions such as updating, deleting loan et al to owner of resource
-Validate loan property values before saving or updating. ensure they are not zero values
-Prevent loan owner from buying their loan
-Create migration for loan status types
-endpoint to get loans according to filter criteria
